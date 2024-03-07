@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSS Feed Example</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Montserrat:wght@500&display=swap">
+<style>
+  /* Add custom styles here */
+  body {
+    margin: 20px; /* Add margin on either side */
+  }
+  .rss-item {
+    margin-bottom: 100px; /* Increase distance between each square by 100px */
+    padding: 20px; /* Increase padding */
+    border-radius: 5px;
+    background-color: #e35443; /* Orange color */
+    position: relative;
+    display: flex; /* Use flexbox to align items horizontally */
+  }
+  .rss-item img {
+    width: 120px; /* Increase image width */
+    height: auto; /* Maintain aspect ratio */
+    margin-right: 20px; /* Add space between the image and text */
+    border-radius: 5px; /* Rounded corners */
+  }
+  .rss-item h3 {
+    margin-top: 0;
+    font-weight: bold;
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    color: #fff; /* White text */
+  }
+  .rss-item p {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500; /* Medium weight */
+    color: #fff; /* White text */
+  }
+  .audio-container {
+    position: relative;
+    margin-top: 20px; /* Additional space between description and audio player */
+  }
+  .audio-player {
+    position: absolute;
+    bottom: -50px; /* Move it even lower */
+    left: 0; /* Adjust positioning */
+    background-color: rgba(255, 255, 255, 0.5); /* Semi-opaque white */
+    border-radius: 5px;
+    padding: 5px;
+    width: 100%; /* Extend width to encompass the container */
+  }
+  .audio-square {
+    position: absolute;
+    bottom: -60px; /* Adjust to accommodate the player */
+    left: 0; /* Adjust to accommodate the player */
+    width: 100%; /* Extend width to encompass the container */
+    height: 60px; /* Adjust to accommodate the player and padding */
+    background-color: rgba(255, 255, 255, 0.5); /* Semi-opaque white */
+    border-radius: 5px;
+  }
+  .read-more {
+    color: #fff;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="rss-feed"></div>
+
+<script>
+// Fetch RSS feed
+function fetchRSSFeed() {
+  fetch('https://feeds.simplecast.com/uGnEl9Mb')
+    .then(response => response.text())
+    .then(data => {
+      // Parse XML
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(data, 'application/xml');
+
+      // Extract podcast cover image
+      const podcastImage = xml.querySelector('itunes\\:image, image').getAttribute('href');
+
+      // Extract items from RSS feed
+      const items = xml.querySelectorAll('item');
+      let feedHTML = '';
+      items.forEach(item => {
+        const title = item.querySelector('title').textContent;
+        let description = item.querySelector('itunes\\:summary, summary').textContent;
+        if (description.length > 280) {
+          description = description.substring(0, 280) + '...';
+        }
+        const link = item.querySelector('link').textContent;
+        const audioLink = item.querySelector('enclosure').getAttribute('url');
+        const imageURL = item.querySelector('itunes\\:image, image');
+        const episodeImage = imageURL ? imageURL.getAttribute('href') : podcastImage;
+        feedHTML += `
+          <div class="rss-item">
+            <img src="${episodeImage}" alt="Episode Image">
+            <div>
+              <h3>${title}</h3>
+              <p>${description} <span class="read-more" onclick="window.open('${link}', '_blank')">Read more</span></p>
+              <div class="audio-container">
+                <div class="audio-square"></div> <!-- Add square around the player -->
+                <audio class="audio-player" controls>
+                  <source src="${audioLink}" type="audio/mpeg">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Display feed on the page
+      document.getElementById('rss-feed').innerHTML = feedHTML;
+    })
+    .catch(error => console.error('Error fetching RSS feed:', error));
+}
+
+// Call fetchRSSFeed initially
+fetchRSSFeed();
+
+// Schedule fetching the RSS feed every 10 minutes
+setInterval(fetchRSSFeed, 10 * 60 * 1000); // 10 minutes in milliseconds
+</script>
+</body>
+</html>
